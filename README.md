@@ -20,6 +20,8 @@ npm run preview
 - Model concepts: Spark, Atlas, Prism.
 - JavaScript/Python illustrative API tabs and clipboard copying.
 - Monthly/yearly illustrative pricing and accessible explanation dialogs.
+- Selectable pricing plans with plan-specific Explorer, Pioneer, and Collective checkout flows.
+- Distinct model-detail views with capabilities and model-specific example prompts.
 - Responsive navigation and reduced-motion support.
 
 AETHER, its products, models, API examples and pricing are fictional design concepts. There are no real customer endorsements, performance benchmarks, live AI requests, authentication, payments or subscriptions. The API examples must not be used as documentation for an existing SDK.

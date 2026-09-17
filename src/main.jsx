@@ -221,7 +221,7 @@ function App() {
         <Ecosystem />
         <section className="final-cta section" id="contact">
           <div className="section-index">
-            <span>06 — AETHER</span>
+            <span>07 — AETHER</span>
             <span>INTELLIGENCE WITHOUT BOUNDARIES</span>
           </div>
           <Reveal>

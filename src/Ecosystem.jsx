@@ -9,6 +9,13 @@ const models = [
     tags: ["Conversation", "Writing"],
     num: "01",
     symbol: "◉",
+    bestFor: "Quick thinking, daily writing and fluid conversations.",
+    capabilities: [
+      "Fast conversational responses",
+      "Drafting and rewriting",
+      "Everyday problem solving",
+    ],
+    sample: "Turn these rough notes into a clear project brief.",
   },
   {
     name: "Aether Atlas",
@@ -17,6 +24,13 @@ const models = [
     tags: ["Reasoning", "Research"],
     num: "02",
     symbol: "✳",
+    bestFor: "Research, layered questions and long-form analysis.",
+    capabilities: [
+      "Multi-step reasoning",
+      "Connected document analysis",
+      "Structured research synthesis",
+    ],
+    sample: "Compare these three reports and surface the hidden trade-offs.",
   },
   {
     name: "Aether Prism",
@@ -25,6 +39,45 @@ const models = [
     tags: ["Multimodal", "Creative"],
     num: "03",
     symbol: "✺",
+    bestFor: "Visual exploration, creative direction and multimodal ideas.",
+    capabilities: [
+      "Words and image understanding",
+      "Concept development",
+      "Creative variation",
+    ],
+    sample: "Develop three visual directions from this product story.",
+  },
+];
+const planCatalog = [
+  {
+    name: "Explorer",
+    monthly: 0,
+    desc: "A place to follow your curiosity.",
+    features: [
+      "Spark conversations",
+      "A personal idea workspace",
+      "Essential writing tools",
+    ],
+  },
+  {
+    name: "Pioneer",
+    monthly: 24,
+    desc: "More room for ambitious ideas.",
+    features: [
+      "The complete model family",
+      "Research and creative workspaces",
+      "Reusable project context",
+    ],
+  },
+  {
+    name: "Collective",
+    monthly: null,
+    desc: "A shared space for what comes next.",
+    features: [
+      "Collaborative project spaces",
+      "Workspace administration",
+      "An API integration pathway",
+    ],
   },
 ];
 const snippets = {
@@ -36,7 +89,10 @@ export default function Ecosystem() {
   const [tab, setTab] = useState("JavaScript"),
     [copied, setCopied] = useState(""),
     [yearly, setYearly] = useState(false),
-    [modal, setModal] = useState(null);
+    [modal, setModal] = useState(null),
+    [selectedPlan, setSelectedPlan] = useState("Pioneer"),
+    [checkoutPlan, setCheckoutPlan] = useState(null),
+    [checkoutDone, setCheckoutDone] = useState(false);
   const dialog = useRef(null),
     trigger = useRef(null),
     timer = useRef(null);
@@ -51,6 +107,24 @@ export default function Ecosystem() {
   function open(name, e) {
     trigger.current = e.currentTarget;
     setModal(name);
+  }
+  function choosePlan(plan) {
+    setSelectedPlan(plan.name);
+    setCheckoutDone(false);
+  }
+  function continueWithPlan() {
+    const plan = planCatalog.find((item) => item.name === selectedPlan);
+    setCheckoutPlan(plan);
+    setCheckoutDone(false);
+    requestAnimationFrame(() =>
+      document
+        .getElementById("checkout")
+        ?.scrollIntoView({ behavior: "smooth" }),
+    );
+  }
+  function submitCheckout(e) {
+    e.preventDefault();
+    setCheckoutDone(true);
   }
   async function copy() {
     try {
@@ -229,84 +303,251 @@ export default function Ecosystem() {
             </button>
           </div>
         </div>
-        <div className="price-grid">
-          {[
-            {
-              name: "Explorer",
-              price: 0,
-              desc: "A place to follow your curiosity.",
-              features: [
-                "Spark conversations",
-                "A personal idea workspace",
-                "Essential writing tools",
-              ],
-            },
-            {
-              name: "Pioneer",
-              price: yearly ? 19.2 : 24,
-              desc: "More room for ambitious ideas.",
-              features: [
-                "The complete model family",
-                "Research and creative workspaces",
-                "Reusable project context",
-              ],
-            },
-            {
-              name: "Collective",
-              price: null,
-              desc: "A shared space for what comes next.",
-              features: [
-                "Collaborative project spaces",
-                "Workspace administration",
-                "An API integration pathway",
-              ],
-            },
-          ].map((plan, i) => (
-            <article
-              key={plan.name}
-              className={`price-plan ${i === 1 ? "featured" : ""}`}
-            >
-              <div className="plan-top">
-                <h3>{plan.name}</h3>
-                {i === 1 && <span>GO FURTHER</span>}
-              </div>
-              <p>{plan.desc}</p>
-              <div className="price">
-                {plan.price === null
-                  ? "Let’s talk"
-                  : `$${Number.isInteger(plan.price) ? plan.price : plan.price.toFixed(2)}`}
-                {plan.price !== null && <span>/ month</span>}
-              </div>
-              <span className="billing-note">
-                {plan.price === null
-                  ? "A team plan concept"
-                  : yearly && plan.price
-                    ? `$${(plan.price * 12).toFixed(2)} billed yearly · concept`
-                    : "Illustrative plan · not available for purchase"}
-              </span>
-              <button
-                className={i === 1 ? "button-primary" : "button-outline"}
-                onClick={(e) => open(`${plan.name} plan`, e)}
+        <div
+          className="price-grid"
+          role="radiogroup"
+          aria-label="Choose an Aether plan"
+        >
+          {planCatalog.map((plan, i) => {
+            const price =
+              plan.monthly === null
+                ? null
+                : yearly
+                  ? plan.monthly * 0.8
+                  : plan.monthly;
+            const selected = selectedPlan === plan.name;
+            return (
+              <article
+                key={plan.name}
+                className={`price-plan ${selected ? "selected" : ""}`}
+                onClick={() => choosePlan(plan)}
               >
-                Explore this plan
-                <Arrow />
-              </button>
-              <ul>
-                {plan.features.map((f) => (
-                  <li key={f}>
-                    <span aria-hidden="true">+</span>
-                    {f}
-                  </li>
-                ))}
-              </ul>
-            </article>
-          ))}
+                <div className="plan-top">
+                  <h3>{plan.name}</h3>
+                  <span className="plan-radio" aria-hidden="true">
+                    {selected ? "●" : "○"}
+                  </span>
+                </div>
+                <p>{plan.desc}</p>
+                <div className="price">
+                  {price === null
+                    ? "Let’s talk"
+                    : `$${Number.isInteger(price) ? price : price.toFixed(2)}`}
+                  {price !== null && <span>/ month</span>}
+                </div>
+                <span className="billing-note">
+                  {price === null
+                    ? "A team plan concept"
+                    : yearly && price
+                      ? `$${(price * 12).toFixed(2)} billed yearly · concept`
+                      : "Illustrative plan · not available for purchase"}
+                </span>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  className={selected ? "button-primary" : "button-outline"}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    choosePlan(plan);
+                  }}
+                >
+                  {selected ? "Selected" : "Select plan"}
+                  <Arrow />
+                </button>
+                <ul>
+                  {plan.features.map((f) => (
+                    <li key={f}>
+                      <span aria-hidden="true">+</span>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            );
+          })}
+        </div>
+        <div className="plan-continue">
+          <div>
+            <span>YOUR SELECTION</span>
+            <strong>{selectedPlan}</strong>
+          </div>
+          <button className="button-primary" onClick={continueWithPlan}>
+            Continue with {selectedPlan} <Arrow />
+          </button>
         </div>
         <p className="pricing-disclaimer">
           Proposed plans for the fictional AETHER ecosystem. No payments,
           subscriptions or live services.
         </p>
       </section>
+      {checkoutPlan && (
+        <section
+          className="checkout section"
+          id="checkout"
+          aria-labelledby="checkout-title"
+        >
+          <div className="section-index">
+            <span>06 — CHECKOUT</span>
+            <span>SELECTED: {checkoutPlan.name.toUpperCase()}</span>
+          </div>
+          {checkoutDone ? (
+            <div className="checkout-success" role="status">
+              <span className="success-mark" aria-hidden="true">
+                ✓
+              </span>
+              <p className="eyebrow">DEMO COMPLETE</p>
+              <h2>
+                {checkoutPlan.name === "Collective"
+                  ? "Conversation requested."
+                  : "Your path is selected."}
+              </h2>
+              <p>
+                {checkoutPlan.name === "Collective"
+                  ? "This demo would now send your team requirements to Aether sales."
+                  : `The ${checkoutPlan.name} plan has been selected in this prototype. No account was created and no payment was charged.`}
+              </p>
+              <button
+                className="button-primary"
+                onClick={() => {
+                  setCheckoutDone(false);
+                  document
+                    .getElementById("pricing")
+                    ?.scrollIntoView({ behavior: "smooth" });
+                }}
+              >
+                Change plan <Arrow />
+              </button>
+            </div>
+          ) : (
+            <div className="checkout-grid">
+              <div className="checkout-summary">
+                <p className="eyebrow">ORDER SUMMARY</p>
+                <h2>{checkoutPlan.name}</h2>
+                <p>{checkoutPlan.desc}</p>
+                <ul>
+                  {checkoutPlan.features.map((feature) => (
+                    <li key={feature}>
+                      <span>+</span>
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+                <div className="checkout-total">
+                  <span>{yearly ? "Yearly billing" : "Monthly billing"}</span>
+                  <strong>
+                    {checkoutPlan.monthly === null
+                      ? "Custom quote"
+                      : checkoutPlan.monthly === 0
+                        ? "$0"
+                        : `$${yearly ? (checkoutPlan.monthly * 0.8 * 12).toFixed(2) : checkoutPlan.monthly.toFixed(2)}`}
+                  </strong>
+                </div>
+              </div>
+              <form className="checkout-form" onSubmit={submitCheckout}>
+                <p className="eyebrow">
+                  {checkoutPlan.name === "Collective"
+                    ? "TEAM DETAILS"
+                    : checkoutPlan.monthly === 0
+                      ? "CREATE YOUR SPACE"
+                      : "DEMO PAYMENT"}
+                </p>
+                <div className="field-row">
+                  <label>
+                    Full name
+                    <input
+                      required
+                      name="name"
+                      autoComplete="name"
+                      placeholder="Your name"
+                    />
+                  </label>
+                  <label>
+                    Email
+                    <input
+                      required
+                      type="email"
+                      name="email"
+                      autoComplete="email"
+                      placeholder="you@example.com"
+                    />
+                  </label>
+                </div>
+                {checkoutPlan.name === "Collective" ? (
+                  <label>
+                    Team size
+                    <select required defaultValue="">
+                      <option value="" disabled>
+                        Select team size
+                      </option>
+                      <option>2–10 people</option>
+                      <option>11–50 people</option>
+                      <option>51+ people</option>
+                    </select>
+                  </label>
+                ) : checkoutPlan.monthly > 0 ? (
+                  <>
+                    <div className="demo-notice">
+                      Demo only — use any placeholder values. Nothing is
+                      transmitted or charged.
+                    </div>
+                    <label>
+                      Card number
+                      <input
+                        required
+                        inputMode="numeric"
+                        autoComplete="off"
+                        placeholder="4242 4242 4242 4242"
+                        pattern="[0-9 ]{15,19}"
+                      />
+                    </label>
+                    <div className="field-row compact">
+                      <label>
+                        Expiry
+                        <input
+                          required
+                          autoComplete="off"
+                          placeholder="MM / YY"
+                        />
+                      </label>
+                      <label>
+                        CVC
+                        <input
+                          required
+                          inputMode="numeric"
+                          autoComplete="off"
+                          placeholder="123"
+                          pattern="[0-9]{3,4}"
+                        />
+                      </label>
+                    </div>
+                  </>
+                ) : (
+                  <div className="demo-notice">
+                    Explorer is free in this concept, so no payment details are
+                    needed.
+                  </div>
+                )}
+                <button
+                  className="button-primary checkout-submit"
+                  type="submit"
+                >
+                  {checkoutPlan.name === "Collective"
+                    ? "Request a conversation"
+                    : checkoutPlan.monthly === 0
+                      ? "Create demo workspace"
+                      : "Complete demo checkout"}
+                  <Arrow />
+                </button>
+                <p className="checkout-legal">
+                  Prototype interaction only. No details leave this browser, and
+                  no charge or subscription is created.
+                </p>
+              </form>
+            </div>
+          )}
+        </section>
+      )}
       <dialog
         ref={dialog}
         aria-labelledby="dialog-title"
@@ -322,20 +563,57 @@ export default function Ecosystem() {
         >
           ×
         </button>
-        <p className="eyebrow">AETHER / PRODUCT CONCEPT</p>
-        <h2 id="dialog-title">{modal}</h2>
-        <p>
+        <p className="eyebrow">
+          AETHER /{" "}
           {models.some((m) => m.name === modal)
-            ? models.find((m) => m.name === modal).text
-            : modal === "Developer preview"
-              ? "The proposed API brings Spark, Atlas and Prism behind a common generate interface. The examples on this page demonstrate the intended developer experience; the SDK and endpoint are not live."
-              : "This is a proposed plan for the fictional AETHER product ecosystem. No account will be created and no payment will be collected."}
+            ? "MODEL DETAIL"
+            : "DEVELOPER CONCEPT"}
         </p>
-        {models.some((m) => m.name === modal) && (
-          <p>This model is a product concept, not a deployed AI service.</p>
+        <h2 id="dialog-title">{modal}</h2>
+        {models.some((m) => m.name === modal) ? (
+          (() => {
+            const model = models.find((m) => m.name === modal);
+            return (
+              <div className="model-detail">
+                <div className="detail-lead">
+                  <span className="detail-symbol" aria-hidden="true">
+                    {model.symbol}
+                  </span>
+                  <p>{model.bestFor}</p>
+                </div>
+                <div className="detail-columns">
+                  <div>
+                    <h3>Core capabilities</h3>
+                    <ul>
+                      {model.capabilities.map((capability) => (
+                        <li key={capability}>
+                          <span>+</span>
+                          {capability}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <h3>Try asking</h3>
+                    <blockquote>“{model.sample}”</blockquote>
+                  </div>
+                </div>
+                <p className="concept-note">
+                  Aether {model.name.replace("Aether ", "")} is a fictional
+                  product concept, not a deployed AI service.
+                </p>
+              </div>
+            );
+          })()
+        ) : (
+          <p>
+            The proposed API brings Spark, Atlas and Prism behind a common
+            generate interface. The examples on this page demonstrate the
+            intended developer experience; the SDK and endpoint are not live.
+          </p>
         )}
         <button className="button-primary" onClick={() => setModal(null)}>
-          Keep exploring <Arrow />
+          Back to models <Arrow />
         </button>
       </dialog>
     </>
