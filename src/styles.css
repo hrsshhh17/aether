@@ -1255,6 +1255,53 @@ h2 {
   display: grid;
   gap: 20px;
 }
+.checkout-progress {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #b8c4b4;
+}
+.checkout-progress > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #859280;
+  font-size: 10px;
+}
+.checkout-progress > div span {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid #a9b6a5;
+  border-radius: 50%;
+  font-size: 9px;
+}
+.checkout-progress > div.active {
+  color: #30462f;
+}
+.checkout-progress > div.active span {
+  color: #e8f3e3;
+  background: #385d3b;
+  border-color: #385d3b;
+}
+.checkout-stage {
+  display: grid;
+  gap: 20px;
+}
+.checkout-stage h3 {
+  margin: 8px 0 0;
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: -0.04em;
+}
+.stage-copy {
+  color: #687867;
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 8px 0 0;
+}
 .checkout-form label {
   display: grid;
   gap: 8px;
@@ -1263,7 +1310,8 @@ h2 {
   letter-spacing: 0.03em;
 }
 .checkout-form input,
-.checkout-form select {
+.checkout-form select,
+.checkout-form textarea {
   width: 100%;
   border: 1px solid #a8b7a4;
   border-radius: 3px;
@@ -1275,9 +1323,14 @@ h2 {
   outline: none;
 }
 .checkout-form input:focus,
-.checkout-form select:focus {
+.checkout-form select:focus,
+.checkout-form textarea:focus {
   border-color: #426846;
   box-shadow: 0 0 0 3px #42684618;
+}
+.checkout-form textarea {
+  resize: vertical;
+  min-height: 100px;
 }
 .field-row {
   display: grid;
@@ -1305,6 +1358,71 @@ h2 {
   line-height: 1.6;
   text-align: center;
   margin: 0;
+}
+.form-error {
+  color: #8a2f2f;
+  background: #edd8d3;
+  border-left: 2px solid #a33c34;
+  padding: 10px 13px;
+  margin: 0;
+  font-size: 11px;
+}
+.stage-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  margin-top: 5px;
+}
+.back-button {
+  color: #586b57;
+  font-size: 12px;
+  padding: 12px 4px;
+}
+.back-button:hover {
+  color: #1b2c23;
+}
+.review-stage dl {
+  margin: 0;
+  border-top: 1px solid #b7c2b3;
+}
+.review-stage dl > div {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 20px;
+  padding: 17px 0;
+  border-bottom: 1px solid #b7c2b3;
+}
+.review-stage dt {
+  color: #687966;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.review-stage dd {
+  margin: 0;
+  font-size: 14px;
+}
+.review-stage dd small {
+  display: block;
+  color: #687966;
+  font-size: 11px;
+  margin-top: 5px;
+}
+.confirm-check {
+  display: flex !important;
+  grid-template-columns: auto 1fr;
+  align-items: flex-start;
+  gap: 10px !important;
+  padding: 15px;
+  background: #dce6d6;
+  line-height: 1.55;
+}
+.confirm-check input {
+  width: 16px;
+  height: 16px;
+  margin: 1px 0 0;
+  accent-color: #385d3b;
 }
 .checkout-success {
   max-width: 720px;
@@ -1518,6 +1636,24 @@ dialog .button-primary {
   }
   .field-row.compact {
     grid-template-columns: 1fr 1fr;
+  }
+  .checkout-progress > div {
+    font-size: 8px;
+    gap: 5px;
+  }
+  .checkout-progress > div span {
+    width: 21px;
+    height: 21px;
+  }
+  .stage-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+  .stage-actions .button-primary {
+    width: 100%;
+  }
+  .review-stage dl > div {
+    grid-template-columns: 85px 1fr;
   }
   .detail-columns {
     grid-template-columns: 1fr;

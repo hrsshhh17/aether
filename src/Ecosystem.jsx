@@ -92,7 +92,10 @@ export default function Ecosystem() {
     [modal, setModal] = useState(null),
     [selectedPlan, setSelectedPlan] = useState("Pioneer"),
     [checkoutPlan, setCheckoutPlan] = useState(null),
-    [checkoutDone, setCheckoutDone] = useState(false);
+    [checkoutDone, setCheckoutDone] = useState(false),
+    [checkoutStep, setCheckoutStep] = useState(1),
+    [checkoutData, setCheckoutData] = useState({}),
+    [checkoutError, setCheckoutError] = useState("");
   const dialog = useRef(null),
     trigger = useRef(null),
     timer = useRef(null);
@@ -116,14 +119,34 @@ export default function Ecosystem() {
     const plan = planCatalog.find((item) => item.name === selectedPlan);
     setCheckoutPlan(plan);
     setCheckoutDone(false);
+    setCheckoutStep(1);
+    setCheckoutData({});
+    setCheckoutError("");
     requestAnimationFrame(() =>
       document
         .getElementById("checkout")
         ?.scrollIntoView({ behavior: "smooth" }),
     );
   }
-  function submitCheckout(e) {
+  function advanceCheckout(e) {
     e.preventDefault();
+    const values = Object.fromEntries(new FormData(e.currentTarget));
+    if (checkoutStep === 1 && values.password !== values.confirmPassword) {
+      setCheckoutError("Passwords do not match.");
+      return;
+    }
+    setCheckoutError("");
+    if (checkoutStep === 2 && values.cardNumber) {
+      values.cardLast4 = values.cardNumber.replace(/\s/g, "").slice(-4);
+      delete values.cardNumber;
+      delete values.cvc;
+    }
+    delete values.password;
+    delete values.confirmPassword;
+    setCheckoutData((current) => ({ ...current, ...values }));
+    setCheckoutStep((step) => Math.min(step + 1, 3));
+  }
+  function finishCheckout() {
     setCheckoutDone(true);
   }
   async function copy() {
@@ -399,13 +422,13 @@ export default function Ecosystem() {
               <p className="eyebrow">DEMO COMPLETE</p>
               <h2>
                 {checkoutPlan.name === "Collective"
-                  ? "Conversation requested."
-                  : "Your path is selected."}
+                  ? "Team request prepared."
+                  : "Prototype checkout complete."}
               </h2>
               <p>
                 {checkoutPlan.name === "Collective"
-                  ? "This demo would now send your team requirements to Aether sales."
-                  : `The ${checkoutPlan.name} plan has been selected in this prototype. No account was created and no payment was charged.`}
+                  ? "In a production version, this request would be sent to the Aether team after email verification. Nothing was submitted from this prototype."
+                  : `You completed the full ${checkoutPlan.name} onboarding flow. A production version would now verify the email and activate access. No account was created and no payment was charged here.`}
               </p>
               <button
                 className="button-primary"
@@ -444,106 +467,367 @@ export default function Ecosystem() {
                   </strong>
                 </div>
               </div>
-              <form className="checkout-form" onSubmit={submitCheckout}>
-                <p className="eyebrow">
-                  {checkoutPlan.name === "Collective"
-                    ? "TEAM DETAILS"
-                    : checkoutPlan.monthly === 0
-                      ? "CREATE YOUR SPACE"
-                      : "DEMO PAYMENT"}
-                </p>
-                <div className="field-row">
-                  <label>
-                    Full name
-                    <input
-                      required
-                      name="name"
-                      autoComplete="name"
-                      placeholder="Your name"
-                    />
-                  </label>
-                  <label>
-                    Email
-                    <input
-                      required
-                      type="email"
-                      name="email"
-                      autoComplete="email"
-                      placeholder="you@example.com"
-                    />
-                  </label>
+              <div className="checkout-form">
+                <div
+                  className="checkout-progress"
+                  aria-label={`Checkout step ${checkoutStep} of 3`}
+                >
+                  {[
+                    "Account",
+                    checkoutPlan.name === "Collective"
+                      ? "Team"
+                      : checkoutPlan.monthly === 0
+                        ? "Workspace"
+                        : "Payment",
+                    "Review",
+                  ].map((label, index) => (
+                    <div
+                      key={label}
+                      className={checkoutStep >= index + 1 ? "active" : ""}
+                    >
+                      <span>{checkoutStep > index + 1 ? "✓" : index + 1}</span>
+                      {label}
+                    </div>
+                  ))}
                 </div>
-                {checkoutPlan.name === "Collective" ? (
-                  <label>
-                    Team size
-                    <select required defaultValue="">
-                      <option value="" disabled>
-                        Select team size
-                      </option>
-                      <option>2–10 people</option>
-                      <option>11–50 people</option>
-                      <option>51+ people</option>
-                    </select>
-                  </label>
-                ) : checkoutPlan.monthly > 0 ? (
-                  <>
-                    <div className="demo-notice">
-                      Demo only — use any placeholder values. Nothing is
-                      transmitted or charged.
+                {checkoutStep === 1 && (
+                  <form className="checkout-stage" onSubmit={advanceCheckout}>
+                    <div>
+                      <p className="eyebrow">CREATE YOUR AETHER ID</p>
+                      <h3>Start with your account.</h3>
+                      <p className="stage-copy">
+                        Use an email and a strong password. In a production app,
+                        the email would be verified before access.
+                      </p>
                     </div>
-                    <label>
-                      Card number
-                      <input
-                        required
-                        inputMode="numeric"
-                        autoComplete="off"
-                        placeholder="4242 4242 4242 4242"
-                        pattern="[0-9 ]{15,19}"
-                      />
+                    <div className="field-row">
+                      <label>
+                        Full name
+                        <input
+                          required
+                          name="name"
+                          autoComplete="name"
+                          defaultValue={checkoutData.name || ""}
+                          placeholder="Your name"
+                          minLength="2"
+                        />
+                      </label>
+                      <label>
+                        Email address
+                        <input
+                          required
+                          type="email"
+                          name="email"
+                          autoComplete="email"
+                          defaultValue={checkoutData.email || ""}
+                          placeholder="you@example.com"
+                        />
+                      </label>
+                    </div>
+                    <div className="field-row">
+                      <label>
+                        Password
+                        <input
+                          required
+                          type="password"
+                          name="password"
+                          autoComplete="new-password"
+                          placeholder="Minimum 8 characters"
+                          minLength="8"
+                        />
+                      </label>
+                      <label>
+                        Confirm password
+                        <input
+                          required
+                          type="password"
+                          name="confirmPassword"
+                          autoComplete="new-password"
+                          placeholder="Repeat password"
+                          minLength="8"
+                        />
+                      </label>
+                    </div>
+                    {checkoutError && (
+                      <p className="form-error" role="alert">
+                        {checkoutError}
+                      </p>
+                    )}
+                    <button
+                      className="button-primary checkout-submit"
+                      type="submit"
+                    >
+                      Continue <Arrow />
+                    </button>
+                  </form>
+                )}
+                {checkoutStep === 2 && (
+                  <form className="checkout-stage" onSubmit={advanceCheckout}>
+                    {checkoutPlan.name === "Collective" ? (
+                      <>
+                        <div>
+                          <p className="eyebrow">TEAM PROFILE</p>
+                          <h3>Tell us about your team.</h3>
+                        </div>
+                        <div className="field-row">
+                          <label>
+                            Company name
+                            <input
+                              required
+                              name="company"
+                              defaultValue={checkoutData.company || ""}
+                              placeholder="Company or studio"
+                            />
+                          </label>
+                          <label>
+                            Team size
+                            <select
+                              required
+                              name="teamSize"
+                              defaultValue={checkoutData.teamSize || ""}
+                            >
+                              <option value="" disabled>
+                                Select size
+                              </option>
+                              <option>2–10 people</option>
+                              <option>11–50 people</option>
+                              <option>51+ people</option>
+                            </select>
+                          </label>
+                        </div>
+                        <label>
+                          What would your team build?
+                          <textarea
+                            required
+                            name="teamGoal"
+                            rows="4"
+                            defaultValue={checkoutData.teamGoal || ""}
+                            placeholder="Briefly describe your use case"
+                          />
+                        </label>
+                      </>
+                    ) : checkoutPlan.monthly === 0 ? (
+                      <>
+                        <div>
+                          <p className="eyebrow">WORKSPACE SETUP</p>
+                          <h3>Shape your starting space.</h3>
+                        </div>
+                        <div className="field-row">
+                          <label>
+                            Workspace name
+                            <input
+                              required
+                              name="workspace"
+                              defaultValue={checkoutData.workspace || ""}
+                              placeholder="My workspace"
+                            />
+                          </label>
+                          <label>
+                            Primary use
+                            <select
+                              required
+                              name="primaryUse"
+                              defaultValue={checkoutData.primaryUse || ""}
+                            >
+                              <option value="" disabled>
+                                Select a use
+                              </option>
+                              <option>Writing and ideas</option>
+                              <option>Research</option>
+                              <option>Creative exploration</option>
+                              <option>Development</option>
+                            </select>
+                          </label>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div>
+                          <p className="eyebrow">BILLING DETAILS</p>
+                          <h3>Complete your payment profile.</h3>
+                          <p className="stage-copy">
+                            Demo fields only. Never enter a real card number.
+                          </p>
+                        </div>
+                        <div className="demo-notice">
+                          Use the test number 4242 4242 4242 4242. Values stay
+                          in this browser and are discarded.
+                        </div>
+                        <label>
+                          Name on card
+                          <input
+                            required
+                            name="cardName"
+                            autoComplete="off"
+                            defaultValue={checkoutData.cardName || ""}
+                            placeholder="Name shown on card"
+                          />
+                        </label>
+                        <label>
+                          Test card number
+                          <input
+                            required
+                            name="cardNumber"
+                            inputMode="numeric"
+                            autoComplete="off"
+                            placeholder="4242 4242 4242 4242"
+                            pattern="4242 4242 4242 4242"
+                            title="Use the demo card number shown"
+                          />
+                        </label>
+                        <div className="field-row compact">
+                          <label>
+                            Expiry
+                            <input
+                              required
+                              name="expiry"
+                              autoComplete="off"
+                              placeholder="12 / 30"
+                              pattern="(0[1-9]|1[0-2]) / [0-9]{2}"
+                            />
+                          </label>
+                          <label>
+                            CVC
+                            <input
+                              required
+                              name="cvc"
+                              inputMode="numeric"
+                              autoComplete="off"
+                              placeholder="123"
+                              pattern="[0-9]{3}"
+                            />
+                          </label>
+                        </div>
+                        <div className="field-row">
+                          <label>
+                            Country
+                            <select
+                              required
+                              name="country"
+                              defaultValue={checkoutData.country || ""}
+                            >
+                              <option value="" disabled>
+                                Select country
+                              </option>
+                              <option>India</option>
+                              <option>United States</option>
+                              <option>United Kingdom</option>
+                              <option>Other</option>
+                            </select>
+                          </label>
+                          <label>
+                            Postal code
+                            <input
+                              required
+                              name="postalCode"
+                              defaultValue={checkoutData.postalCode || ""}
+                              placeholder="Postal code"
+                              minLength="3"
+                            />
+                          </label>
+                        </div>
+                      </>
+                    )}
+                    <div className="stage-actions">
+                      <button
+                        type="button"
+                        className="back-button"
+                        onClick={() => setCheckoutStep(1)}
+                      >
+                        ← Back
+                      </button>
+                      <button className="button-primary" type="submit">
+                        Review order <Arrow />
+                      </button>
+                    </div>
+                  </form>
+                )}
+                {checkoutStep === 3 && (
+                  <div className="checkout-stage review-stage">
+                    <div>
+                      <p className="eyebrow">FINAL REVIEW</p>
+                      <h3>Check everything once.</h3>
+                    </div>
+                    <dl>
+                      <div>
+                        <dt>Account</dt>
+                        <dd>
+                          {checkoutData.name}
+                          <small>{checkoutData.email}</small>
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Plan</dt>
+                        <dd>
+                          {checkoutPlan.name}
+                          <small>
+                            {yearly ? "Yearly billing" : "Monthly billing"}
+                          </small>
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>
+                          {checkoutPlan.name === "Collective"
+                            ? "Team"
+                            : checkoutPlan.monthly === 0
+                              ? "Workspace"
+                              : "Payment"}
+                        </dt>
+                        <dd>
+                          {checkoutPlan.name === "Collective"
+                            ? checkoutData.company
+                            : checkoutPlan.monthly === 0
+                              ? checkoutData.workspace
+                              : `Test card ending ${checkoutData.cardLast4}`}
+                          <small>
+                            {checkoutPlan.name === "Collective"
+                              ? checkoutData.teamSize
+                              : checkoutPlan.monthly === 0
+                                ? checkoutData.primaryUse
+                                : "Demo payment method"}
+                          </small>
+                        </dd>
+                      </div>
+                    </dl>
+                    <label className="confirm-check">
+                      <input required type="checkbox" />{" "}
+                      <span>
+                        I understand this is a product prototype. No real
+                        account, payment, or subscription will be created.
+                      </span>
                     </label>
-                    <div className="field-row compact">
-                      <label>
-                        Expiry
-                        <input
-                          required
-                          autoComplete="off"
-                          placeholder="MM / YY"
-                        />
-                      </label>
-                      <label>
-                        CVC
-                        <input
-                          required
-                          inputMode="numeric"
-                          autoComplete="off"
-                          placeholder="123"
-                          pattern="[0-9]{3,4}"
-                        />
-                      </label>
+                    <div className="stage-actions">
+                      <button
+                        type="button"
+                        className="back-button"
+                        onClick={() => setCheckoutStep(2)}
+                      >
+                        ← Back
+                      </button>
+                      <button
+                        className="button-primary"
+                        type="button"
+                        onClick={(e) => {
+                          const checkbox = e.currentTarget
+                            .closest(".review-stage")
+                            .querySelector("input[type=checkbox]");
+                          if (!checkbox.reportValidity()) return;
+                          finishCheckout();
+                        }}
+                      >
+                        {checkoutPlan.name === "Collective"
+                          ? "Submit team request"
+                          : "Confirm prototype order"}
+                        <Arrow />
+                      </button>
                     </div>
-                  </>
-                ) : (
-                  <div className="demo-notice">
-                    Explorer is free in this concept, so no payment details are
-                    needed.
                   </div>
                 )}
-                <button
-                  className="button-primary checkout-submit"
-                  type="submit"
-                >
-                  {checkoutPlan.name === "Collective"
-                    ? "Request a conversation"
-                    : checkoutPlan.monthly === 0
-                      ? "Create demo workspace"
-                      : "Complete demo checkout"}
-                  <Arrow />
-                </button>
                 <p className="checkout-legal">
-                  Prototype interaction only. No details leave this browser, and
-                  no charge or subscription is created.
+                  Secure product-flow prototype. Form values remain local to
+                  this page and are never transmitted.
                 </p>
-              </form>
+              </div>
             </div>
           )}
         </section>
